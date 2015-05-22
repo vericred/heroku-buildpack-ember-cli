@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 set -e            # fail fast
 set -o pipefail   # don't ignore exit codes when piping output
 # set -x          # enable debugging
@@ -22,6 +21,9 @@ mkdir -p $build_dir/vendor
 
 # Output npm debug info on error
 trap cat_npm_debug_log ERR
+
+# Load dependencies
+source $bp_dir/lib/common.sh
 
 # Look in package.json's engines.node field for a semver range
 semver_range=$(cat $build_dir/package.json | $bp_dir/vendor/jq -r .engines.node)
@@ -171,18 +173,21 @@ rm -rf $cache_dir/node_modules # (for apps still on the older caching strategy)
 rm -rf $cache_dir/node
 mkdir -p $cache_dir/node
 
-# If app has a node_modules directory, cache it.
-if test -d $build_dir/node_modules; then
-  status "Caching node_modules directory for future builds"
-  cp -r $build_dir/node_modules $cache_dir/node
+# Check NODE_MODULES_CACHE
+if [ $NODE_MODULES_CACHE == true ]; then
+  # If app has a node_modules directory, cache it.
+  if test -d $build_dir/node_modules; then
+    status "Caching node_modules directory for future builds"
+    cp -r $build_dir/node_modules $cache_dir/node
+  fi
+else
+  clean_cache
 fi
 
+clean_npm
+create_cache
 # Copy goodies to the cache
-cp -r $build_dir/.heroku $cache_dir/node
-
-status "Cleaning up node-gyp and npm artifacts"
-rm -rf "$build_dir/.node-gyp"
-rm -rf "$build_dir/.npm"
+#cp -r $build_dir/.heroku $cache_dir/node
 
 bower install --quiet | indent
 
