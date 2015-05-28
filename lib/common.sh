@@ -5,7 +5,7 @@ clean_npm() {
 }
 
 clean_cache() {
-  info "Cleaning previous cache"
+  status "Cleaning previous cache"
   rm -rf "$cache_dir/node_modules" # (for apps still on the older caching strategy)
   rm -rf "$cache_dir/node"
 }
