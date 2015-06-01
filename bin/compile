@@ -174,18 +174,17 @@ rm -rf $cache_dir/node
 mkdir -p $cache_dir/node
 
 # Check NODE_MODULES_CACHE
-if [ $NODE_MODULES_CACHE == true ]; then
-  # If app has a node_modules directory, cache it.
-  if test -d $build_dir/node_modules; then
-    status "Caching node_modules directory for future builds"
-    cp -r $build_dir/node_modules $cache_dir/node
-  fi
-else
-  clean_cache
-fi
+# If app has a node_modules directory, cache it.
+# if test -d $build_dir/node_modules; then
+  # status "Caching node_modules directory for future builds"
+  # cp -r $build_dir/node_modules $cache_dir/node
+# fi
 
+status "Clearing node cache"
+clean_cache
 clean_npm
-create_cache
+
+# create_cache
 # Copy goodies to the cache
 #cp -r $build_dir/.heroku $cache_dir/node
 
