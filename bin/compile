@@ -132,7 +132,7 @@ if [ "$GIT_SSH_KEY" != "" ]; then
   ssh -oStrictHostKeyChecking=no -T git@github.com || true
 fi
 
-clean_cache
+clean_node_cache
 clean_npm
 
 status "Installing dependencies"
