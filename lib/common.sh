@@ -8,6 +8,9 @@ clean_cache() {
   status "Cleaning previous cache"
   rm -rf "$cache_dir/node_modules" # (for apps still on the older caching strategy)
   rm -rf "$cache_dir/node"
+
+  rm -rf "$build_dir/node_modules"
+  rm -rf "$build_dir/node"
 }
 
 create_cache() {
