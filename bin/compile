@@ -100,14 +100,6 @@ fi
 
 cd $build_dir
 
-# Restore bower_components from cache if it exists
-if test -d $build_dir/bower_components; then
-  status "Found existing bower_components directory; skipping cache"
-elif test -d $cache_dir/bower_components; then
-  status "Restoring bower_components directory from cache"
-  cp -r $cache_dir/bower_components $build_dir/
-fi
-
 status "Installing bower which is required by other dependencies"
 npm install bower --quiet --userconfig $build_dir/.npmrc 2>&1 | indent
 PATH=$build_dir/node_modules/bower/bin:$PATH
@@ -132,18 +124,22 @@ if [ "$GIT_SSH_KEY" != "" ]; then
   ssh -oStrictHostKeyChecking=no -T git@github.com || true
 fi
 
-clean_node_cache
-clean_npm
-
 status "Installing dependencies"
+
+# restore caches
+if [ "$USE_BOWER_CACHE" != "" ]; then
+  restore_bower_cache
+fi
+
+if [ "$USE_NODE_CACHE" != "" ]; then
+  restore_node_cache
+fi
+
 # Make npm output to STDOUT instead of its default STDERR
 npm install --quiet --userconfig $build_dir/.npmrc 2>&1 | indent
 
 # Add the project's and ember-cli's dependencies' binaries to the PATH
 PATH=$build_dir/node_modules/.bin:$build_dir/node_modules/ember-cli/node_modules/.bin:$PATH
-
-status "Pruning cached bower dependencies not specified in bower.json"
-bower prune 2>&1 | indent
 
 # Persist goodies like node-version in the slug
 mkdir -p $build_dir/.heroku
@@ -151,28 +147,20 @@ mkdir -p $build_dir/.heroku
 # Save resolved node version in the slug for later reference
 echo $node_version > $build_dir/.heroku/node-version
 
-# Purge node-related cached content, being careful not to purge the top-level
-# cache, for the sake of heroku-buildpack-multi apps.
-rm -rf $cache_dir/node_modules # (for apps still on the older caching strategy)
-rm -rf $cache_dir/node
-mkdir -p $cache_dir/node
-
 # Copy goodies to the cache
 #cp -r $build_dir/.heroku $cache_dir/node
 
 bower install --quiet | indent
+
+# build caches for next time
+create_bower_cache
+create_node_cache
 
 if [ "$GIT_SSH_KEY" != "" ]; then
   # Now that npm & bower have finished running, we should not need the ssh key anymore.  Kill ssh-agent
   eval `ssh-agent -k`
   # Clear that sensitive key data from the environment
   export GIT_SSH_KEY=0
-fi
-
-# If app has a bower_components directory, cache it.
-if test -d $build_dir/bower_components; then
-  status "Caching bower_components directory for future builds"
-  cp -r $build_dir/bower_components $cache_dir/
 fi
 
 if test -f $build_dir/hooks/before_hook.sh; then
