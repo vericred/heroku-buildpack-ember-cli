@@ -21,7 +21,7 @@ clean_bower_cache() {
 create_bower_cache() {
   status "Caching bower_components directory for future builds"
   clean_bower_cache
-  cp -r $build_dir/bower_components $cache_dir/node
+  cp -r $build_dir/bower_components $cache_dir/bower_components
 }
 
 create_node_cache() {
