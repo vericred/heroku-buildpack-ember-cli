@@ -41,7 +41,7 @@ create_node_cache() {
 restore_node_cache() {
   # Restore bower_components from cache if it exists
   rm -rf $build_dir/node_modules
-  if test -d $cache_dir/node_modules; then
+  if test -d $cache_dir/node; then
     status "Restoring node_modules directory from cache"
     cp -r $cache_dir/node $build_dir/node_modules
   fi
