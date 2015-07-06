@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # bin/detect <build-dir>
 
-if [ -f $1/release/index.html ]; then
+if [ -f $1/build/index.html ]; then
   echo "Prebuilt Ember OK" && exit 0
 else
   echo "nope" && exit 1
