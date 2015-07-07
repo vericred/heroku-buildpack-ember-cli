@@ -137,8 +137,8 @@ fi
 #
 # # Make npm output to STDOUT instead of its default STDERR
 # npm install --quiet --userconfig $build_dir/.npmrc 2>&1 | indent
-npm install yelp 2>&1 | indent
-npm install express 2>&1 | indent
+npm install -g yelp 2>&1 | indent
+npm install -g express 2>&1 | indent
 #
 # # Add the project's and ember-cli's dependencies' binaries to the PATH
 # PATH=$build_dir/node_modules/.bin:$build_dir/node_modules/ember-cli/node_modules/.bin:$PATH
