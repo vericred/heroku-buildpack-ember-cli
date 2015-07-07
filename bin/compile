@@ -20,11 +20,11 @@ build_env=${EMBER_ENV:-production}
 mkdir -p $build_dir/vendor
 
 # # Output npm debug info on error
-# trap cat_npm_debug_log ERR
-#
+trap cat_npm_debug_log ERR
+
 # # Load dependencies
-# source $bp_dir/lib/common.sh
-#
+source $bp_dir/lib/common.sh
+
 # Look in package.json's engines.node field for a semver range
 semver_range=$(cat $build_dir/package.json | $bp_dir/vendor/jq -r .engines.node)
 
@@ -136,10 +136,11 @@ fi
 # fi
 #
 # # Make npm output to STDOUT instead of its default STDERR
-# npm install --quiet --userconfig $build_dir/.npmrc 2>&1 | indent
-npm install yelp 2>&1 | indent
-npm install express 2>&1 | indent
-#
+npm install --quiet --userconfig $build_dir/.npmrc 2>&1 | indent
+
+# npm install -g yelp 2>&1 | indent
+# npm install -g express 2>&1 | indent
+
 # # Add the project's and ember-cli's dependencies' binaries to the PATH
 # PATH=$build_dir/node_modules/.bin:$build_dir/node_modules/ember-cli/node_modules/.bin:$PATH
 #
