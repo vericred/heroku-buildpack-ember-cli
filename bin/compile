@@ -19,10 +19,10 @@ build_env=${EMBER_ENV:-production}
 
 mkdir -p $build_dir/vendor
 
-# Output npm debug info on error
+# # Output npm debug info on error
 trap cat_npm_debug_log ERR
 
-# Load dependencies
+# # Load dependencies
 source $bp_dir/lib/common.sh
 
 # Look in package.json's engines.node field for a semver range
@@ -61,25 +61,25 @@ chmod +x $build_dir/vendor/node/bin/*
 PATH=$build_dir/vendor/node/bin:$PATH
 
 # Optionally bootstrap a different npm version
-npm_engine=$(cat $build_dir/package.json | $bp_dir/vendor/jq -r .engines.npm)
-if [ "$npm_engine" != "" ]; then
-  if ! [[ "$npm_engine" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    status "Resolving npm version ${npm_engine} via semver.io..."
-    npm_engine=$(curl --silent --get --data-urlencode "range=${npm_engine}" https://semver.herokuapp.com/npm/resolve)
-  fi
-  if [[ `npm --version` == "$npm_engine" ]]; then
-    status "npm `npm --version` already installed with node"
-  else
-    status "Downloading and installing npm $npm_engine (replacing version `npm --version`)..."
-    npm install --unsafe-perm --quiet -g npm@$npm_engine 2>&1 >/dev/null | indent
-  fi
-  if [ "${npm_engine:0:1}" -lt "2" ]; then
-    latest_npm=$(curl --silent --get https://semver.herokuapp.com/npm/stable)
-    protip "This version of npm ($npm_engine) has several known issues - consider upgrading to the latest release ($latest_npm)"
-  fi
-else
-  status "Using default npm version: `npm --version`"
-fi
+# npm_engine=$(cat $build_dir/package.json | $bp_dir/vendor/jq -r .engines.npm)
+# if [ "$npm_engine" != "" ]; then
+#   if ! [[ "$npm_engine" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+#     status "Resolving npm version ${npm_engine} via semver.io..."
+#     npm_engine=$(curl --silent --get --data-urlencode "range=${npm_engine}" https://semver.herokuapp.com/npm/resolve)
+#   fi
+#   if [[ `npm --version` == "$npm_engine" ]]; then
+#     status "npm `npm --version` already installed with node"
+#   else
+#     status "Downloading and installing npm $npm_engine (replacing version `npm --version`)..."
+#     npm install --unsafe-perm --quiet -g npm@$npm_engine 2>&1 >/dev/null | indent
+#   fi
+#   if [ "${npm_engine:0:1}" -lt "2" ]; then
+#     latest_npm=$(curl --silent --get https://semver.herokuapp.com/npm/stable)
+#     protip "This version of npm ($npm_engine) has several known issues - consider upgrading to the latest release ($latest_npm)"
+#   fi
+# else
+#   status "Using default npm version: `npm --version`"
+# fi
 
 status "Downloading and installing nginx"
 nginx_url=https://s3.amazonaws.com/devmynd-github/heroku-nginx-1.6.0.tar.gz
@@ -98,80 +98,82 @@ else
   status "Custom nginx config found"
 fi
 
-cd $build_dir
-
-status "Installing bower which is required by other dependencies"
-npm install bower --quiet --userconfig $build_dir/.npmrc 2>&1 | indent
-PATH=$build_dir/node_modules/bower/bin:$PATH
-
+# cd $build_dir
+#
+# status "Installing bower which is required by other dependencies"
+# npm install bower --quiet --userconfig $build_dir/.npmrc 2>&1 | indent
+# PATH=$build_dir/node_modules/bower/bin:$PATH
+#
 if [ -d "$env_dir" ]; then
   status "Exporting config vars to environment"
   export_env_dir $env_dir
 fi
 
-if [ "$GIT_SSH_KEY" != "" ]; then
-  status "Detected SSH key for git.  launching ssh-agent and loading key"
-  echo $GIT_SSH_KEY | base64 --decode > id_rsa
-  # launch ssh-agent, we'll use it to serve our ssh key
-  # and kill it towards the end of the buildpack's run
-  eval `ssh-agent -s`
-  # We're not supporting passphrases at this time.  We could pull that in
-  # from config as well, but then we'd have to setup expect or some other
-  # terminal automation tool to feed it into ssh-add.
-  ssh-add id_rsa
-  rm id_rsa
-  # Add github to the list of known hosts - ignore the warning or else set -e will abort the deployment
-  ssh -oStrictHostKeyChecking=no -T git@github.com || true
-fi
+# if [ "$GIT_SSH_KEY" != "" ]; then
+#   status "Detected SSH key for git.  launching ssh-agent and loading key"
+#   echo $GIT_SSH_KEY | base64 --decode > id_rsa
+#   # launch ssh-agent, we'll use it to serve our ssh key
+#   # and kill it towards the end of the buildpack's run
+#   eval `ssh-agent -s`
+#   # We're not supporting passphrases at this time.  We could pull that in
+#   # from config as well, but then we'd have to setup expect or some other
+#   # terminal automation tool to feed it into ssh-add.
+#   ssh-add id_rsa
+#   rm id_rsa
+#   # Add github to the list of known hosts - ignore the warning or else set -e will abort the deployment
+#   ssh -oStrictHostKeyChecking=no -T git@github.com || true
+# fi
+#
+# status "Installing dependencies"
+#
+# # restore caches
+# if [ "$USE_BOWER_CACHE" != "" ]; then
+#   restore_bower_cache
+# fi
+#
+# if [ "$USE_NODE_CACHE" != "" ]; then
+#   restore_node_cache
+# fi
+#
+# # Make npm output to STDOUT instead of its default STDERR
+cd $build_dir
+npm install yelp 2>&1 | indent
+npm install express 2>&1 | indent
 
-status "Installing dependencies"
+# # Add the project's and ember-cli's dependencies' binaries to the PATH
+# PATH=$build_dir/node_modules/.bin:$build_dir/node_modules/ember-cli/node_modules/.bin:$PATH
+#
+# # Persist goodies like node-version in the slug
+# mkdir -p $build_dir/.heroku
+#
+# # Save resolved node version in the slug for later reference
+# echo $node_version > $build_dir/.heroku/node-version
+#
+# # Copy goodies to the cache
+# #cp -r $build_dir/.heroku $cache_dir/node
+#
+# bower install --quiet | indent
+#
+# # build caches for next time
+# create_bower_cache
+# create_node_cache
+#
+# if [ "$GIT_SSH_KEY" != "" ]; then
+#   # Now that npm & bower have finished running, we should not need the ssh key anymore.  Kill ssh-agent
+#   eval `ssh-agent -k`
+#   # Clear that sensitive key data from the environment
+#   export GIT_SSH_KEY=0
+# fi
+#
+# if test -f $build_dir/hooks/before_hook.sh; then
+#   status "Before hook detected. Running..."
+#   source $build_dir/hooks/before_hook.sh
+# fi
+#
+# status "Building Ember CLI application $build_env distribution"
+# node_modules/ember-cli/bin/ember build --environment $build_env | indent
 
-# restore caches
-if [ "$USE_BOWER_CACHE" != "" ]; then
-  restore_bower_cache
-fi
-
-if [ "$USE_NODE_CACHE" != "" ]; then
-  restore_node_cache
-fi
-
-# Make npm output to STDOUT instead of its default STDERR
-npm install --quiet --userconfig $build_dir/.npmrc 2>&1 | indent
-
-# Add the project's and ember-cli's dependencies' binaries to the PATH
-PATH=$build_dir/node_modules/.bin:$build_dir/node_modules/ember-cli/node_modules/.bin:$PATH
-
-# Persist goodies like node-version in the slug
-mkdir -p $build_dir/.heroku
-
-# Save resolved node version in the slug for later reference
-echo $node_version > $build_dir/.heroku/node-version
-
-# Copy goodies to the cache
-#cp -r $build_dir/.heroku $cache_dir/node
-
-bower install --quiet | indent
-
-# build caches for next time
-create_bower_cache
-create_node_cache
-
-if [ "$GIT_SSH_KEY" != "" ]; then
-  # Now that npm & bower have finished running, we should not need the ssh key anymore.  Kill ssh-agent
-  eval `ssh-agent -k`
-  # Clear that sensitive key data from the environment
-  export GIT_SSH_KEY=0
-fi
-
-if test -f $build_dir/hooks/before_hook.sh; then
-  status "Before hook detected. Running..."
-  source $build_dir/hooks/before_hook.sh
-fi
-
-status "Building Ember CLI application $build_env distribution"
-node_modules/ember-cli/bin/ember build --environment $build_env | indent
-
-if test -f $build_dir/hooks/after_hook.sh; then
-  status "After hook detected. Running..."
-  source $build_dir/hooks/after_hook.sh
-fi
+# if test -f $build_dir/hooks/after_hook.sh; then
+#   status "After hook detected. Running..."
+#   source $build_dir/hooks/after_hook.sh
+# fi
