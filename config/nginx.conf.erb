@@ -48,7 +48,7 @@ http {
 
     listen <%= ENV["PORT"] %>;
     keepalive_timeout 5;
-    root dist;
+    root build;
     index index.html;
     port_in_redirect off;
 
